@@ -21,6 +21,8 @@ class Buzzmix extends Smarty {
     public $classes_dir = null;
     public $classes_suffix = ".class.php";
     
+    public $separator = ",";
+    
     private $mysql = null;
     private $current_page = null;
     
@@ -225,7 +227,7 @@ class Buzzmix extends Smarty {
             throw new Exception("The images directory is not set.");
         }
         
-        $file = $this->images_dir . str_replace(',', '/', $image) . $this->images_suffix;
+        $file = $this->images_dir . str_replace($this->separator, '/', $image) . $this->images_suffix;
         
         if(!file_exists($file)) {
             return false;
@@ -279,7 +281,7 @@ class Buzzmix extends Smarty {
             return $this->handle_css();
         }
         
-        if(preg_match('/^img,(([a-zA-Z0-9_+-]+,)*[a-zA-Z0-9_+-]+(\.[a-z]+)?)/', $uri, $matches) == 1) {
+        if(preg_match('/^img' . preg_quote($this->separator) . '(([a-zA-Z0-9_+-]+' . preg_quote($this->separator) . ')*[a-zA-Z0-9_+-]+(\.[a-z]+)?)/', $uri, $matches) == 1) {
             return $this->handle_image($matches[1]);
         }
         
@@ -287,8 +289,10 @@ class Buzzmix extends Smarty {
             throw new Exception("The pages directory is not set.");
         }
         
-        if(strpos($uri, "/") !== false) {
-            return false;
+        if($this->separator != "/") {
+            if(strpos($uri, "/") !== false) {
+                return false;
+            }
         }
         
         if(strpos($uri, ".") !== false) {
@@ -299,7 +303,7 @@ class Buzzmix extends Smarty {
         
         $this->mysql_connect();
         
-        $parts = explode(',', $uri);
+        $parts = explode($this->separator, $uri);
         
         for($i = count($parts); $i > 0; $i--) {
             
