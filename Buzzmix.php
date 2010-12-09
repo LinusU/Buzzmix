@@ -281,7 +281,7 @@ class Buzzmix extends Smarty {
             return $this->handle_css();
         }
         
-        if(preg_match('/^img' . preg_quote($this->separator) . '(([a-zA-Z0-9_+-]+' . preg_quote($this->separator) . ')*[a-zA-Z0-9_+-]+(\.[a-z]+)?)/', $uri, $matches) == 1) {
+        if(preg_match('/^img' . preg_quote($this->separator, "/") . '(([a-zA-Z0-9_+-]+' . preg_quote($this->separator, "/") . ')*[a-zA-Z0-9_+-]+(\.[a-z]+)?)/', $uri, $matches) == 1) {
             return $this->handle_image($matches[1]);
         }
         
