@@ -128,6 +128,22 @@ class Buzzsql {
         
     }
     
+    function get_foreign($type) {
+        
+        $self = get_called_class();
+        
+        $ret = $type::select(array(
+            $self::get_table() => $this->__get($self::get_primary())
+        ));
+        
+        if(count($ret) > 0) {
+            return $ret[0];
+        } else {
+            return false;
+        }
+        
+    }
+    
     function get_many($type, $order_by = array(), $limit = null) {
         
         $self = get_called_class();
@@ -192,7 +208,7 @@ class Buzzsql {
             mysql_real_escape_string($primary)
         ));
         
-        if($re !== false and mysql_numrows($re) > 0) {
+        if($re !== false and mysql_num_rows($re) > 0) {
             $this->info = mysql_fetch_assoc($re);
             $this->update = array();
             return true;
@@ -240,23 +256,63 @@ class Buzzsql {
         
         $self = get_called_class();
         
-        $re = mysql_query(sprintf(
+        return $self::return_many(mysql_query(sprintf(
             'SELECT * FROM `%s`%s',
             $self::get_table(),
             $self::build_sql($where, $order_by, $limit)
-        ));
+        )), $self);
         
-        if($re === false) {
+    }
+    
+    static function select_one($where = array(), $order_by = array()) {
+        
+        $self = get_called_class();
+        
+        $ret = $self::select($where, $order_by, 1);
+        
+        if(count($ret) == 1) {
+            return $ret[0];
+        } else {
+            return false;
+        }
+        
+    }
+    
+    static function return_many($result, $type = null) {
+        
+        if($result === false) {
             return false;
         }
         
         $ret = array();
         
-        while($row = mysql_fetch_assoc($re)) {
-            $ret[] = new $self($row);
+        while($row = mysql_fetch_assoc($result)) {
+            if($type === null) {
+                $ret[] = (object) $row;
+            } else {
+                $ret[] = new $type($row);
+            }
         }
         
         return $ret;
+        
+    }
+    
+    static function return_one($result, $type = null) {
+        
+        if($result === false) {
+            return false;
+        }
+        
+        if(mysql_num_rows($result) == 0) {
+            return false;
+        }
+        
+        if($type === null) {
+            return mysql_fetch_object($result);
+        } else {
+            return new $type(mysql_fetch_assoc($result));
+        }
         
     }
     

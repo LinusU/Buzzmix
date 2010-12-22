@@ -184,15 +184,15 @@ class Buzzmix extends Smarty {
         
     }
     
-    function display($resource_name = null, $cache_id = null, $compile_id = null) {
+    function display($template = null, $cache_id = null, $compile_id = null, $parent = null) {
         
         $this->display_header();
         
-        if($resource_name === null) {
-            $resource_name = "pages/" . $this->current_page . ".tpl";
+        if($template === null) {
+            $template = "pages/" . $this->current_page . ".tpl";
         }
         
-        return parent::display($resource_name, $cache_id, $compile_id);
+        return parent::display($template, $cache_id, $compile_id, $parent);
         
     }
     
@@ -275,6 +275,10 @@ class Buzzmix extends Smarty {
         
         if($pos !== false) {
             $uri = substr($uri, 0, $pos);
+        }
+        
+        while(substr($uri, -1) == "/") {
+            $uri = substr($uri, 0, -1);
         }
         
         if(preg_match('/^css$/', $uri) == 1) {

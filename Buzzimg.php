@@ -79,6 +79,38 @@ class Buzzimg {
         die(0);
     }
     
+    function resize($width = null, $height = null) {
+        
+        if($width === null and $height === null) {
+            throw new Exception("Both new width and new height can't be null.");
+        }
+        
+        $w = imagesx($this->image);
+        $h = imagesy($this->image);
+        $a = $w/$h;
+        
+        if($width === null) {
+            $width = ($height / $h) * $w;
+        } elseif($height === null) {
+            $height = ($width / $w) * $h;
+        } elseif($width > ($height / $h) * $w) {
+            $width = ($height / $h) * $w;
+        } elseif($height > ($width / $w) * $h) {
+            $height = ($width / $w) * $h;
+        }
+        
+        $out = imagecreatetruecolor($width, $height);
+        
+        imagecopyresampled($out, $this->image, 0, 0, 0, 0, $width, $height, $w, $h);
+        
+        imagedestroy($this->image);
+        
+        $this->image = $out;
+        
+        return $this;
+        
+    }
+    
     function thumbnail($width, $height) {
         
         $w = imagesx($this->image);
