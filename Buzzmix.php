@@ -343,5 +343,59 @@ class Buzzmix extends Smarty {
         return true;
         
     }
-
+    
+    function craft_url($to, $keep_query_string = false) {
+        
+        if(preg_match('/^https?\:\/\//', $to)) {
+            
+            $url = $to;
+            
+        } else {
+            
+            if(empty($_SERVER['HTTPS']) or $_SERVER['HTTPS'] == "off") {
+                $url = "http://";
+            } else {
+                $url = "https://";
+            }
+            
+            $url .= $_SERVER['HTTP_HOST'];
+            
+            if($to[0] != '/') {
+                if(preg_match('/^(.+)\/([^\/]*)\?' . preg_quote($_SERVER['QUERY_STRING'], '/') . '$/', $_SERVER['REQUEST_URI'], $matches)) {
+                    $url .= $matches[1] . '/';
+                }
+            }
+            
+            $url .= $to;
+            
+        }
+        
+        if($keep_query_string and strlen($_SERVER['QUERY_STRING']) > 0) {
+            
+            if(strpos($url, "?") === false) {
+                $url .= "?" . $_SERVER['QUERY_STRING'];
+            } else {
+                $url .= "&" . $_SERVER['QUERY_STRING'];
+            }
+            
+        }
+        
+        return $url;
+        
+    }
+    
+    function redirect($to, $keep_query_string = false) {
+        
+        $url = $this->craft_url($to, $keep_query_string);
+        
+        header('x', true, 303);
+        header('Location: ' . $url);
+        
+        printf('<h1>%s</h1>%s', "303 See Other", PHP_EOL);
+        printf('<p>%s <a href="%2$s">%2$s</a></p>', "Please see:", $url);
+        
+        die(0);
+        
+    }
+    
 }
