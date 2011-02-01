@@ -8,23 +8,29 @@ class Buzzsql {
     static $table = null;
     static $primary = null;
     
+    static $searchable = null;
+    
     protected static function build_sql($where, $order_by, $limit) {
         
         $sql = '';
         
         $first = true;
         
-        foreach($where as $key => $val) {
-            
-            if($first) {
-                $first = false;
-                $sql .= ' WHERE ';
-            } else {
-                $sql .= ' AND ';
+        if(is_string($where)) {
+            $sql .= ' WHERE ' . $where;
+        } else {
+            foreach($where as $key => $val) {
+                
+                if($first) {
+                    $first = false;
+                    $sql .= ' WHERE ';
+                } else {
+                    $sql .= ' AND ';
+                }
+                
+                $sql .= "`$key` = '" . mysql_real_escape_string($val) . "'";
+                
             }
-            
-            $sql .= "`$key` = '" . mysql_real_escape_string($val) . "'";
-            
         }
         
         $first = true;
@@ -249,6 +255,30 @@ class Buzzsql {
         } else {
             return new $self(mysql_insert_id());
         }
+        
+    }
+    
+    static function search($query, $where = array(), $order_by = array(), $limit = null) {
+        
+        $self = get_called_class();
+        
+        if(empty($self::$searchable)) {
+            throw new Exception("The table $self is not searchable.");
+        }
+        
+        $sql = trim($self::build_sql($where, $order_by, $limit));
+        
+        if(substr($sql, 0, 5) == "WHERE") {
+            $sql = "AND" . substr($sql, 5);
+        }
+        
+        return $self::return_many(mysql_query(sprintf(
+            "SELECT * FROM `%s` WHERE MATCH(`%s`) AGAINST('%s') %s",
+            $self::get_table(),
+            implode('`,`', $self::$searchable),
+            mysql_real_escape_string($query),
+            $sql
+        )), $self);
         
     }
     
