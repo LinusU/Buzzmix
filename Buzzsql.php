@@ -28,6 +28,10 @@ class Buzzsql {
                     $sql .= ' AND ';
                 }
                 
+                if(is_object($val)) {
+                    $val = $val->__get($val::get_primary());
+                }
+                
                 $sql .= "`$key` = '" . mysql_real_escape_string($val) . "'";
                 
             }
