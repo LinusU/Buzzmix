@@ -361,7 +361,7 @@ class Buzzmix extends Smarty {
             $url .= $_SERVER['HTTP_HOST'];
             
             if($to[0] != '/') {
-                if(preg_match('/^(.+)\/([^\/]*)\?' . preg_quote($_SERVER['QUERY_STRING'], '/') . '$/', $_SERVER['REQUEST_URI'], $matches)) {
+                if(preg_match('/^(.+)\/([^\/]*)\?' . (empty($_SERVER['QUERY_STRING'])?'?':'') . preg_quote($_SERVER['QUERY_STRING'], '/') . '$/', $_SERVER['REQUEST_URI'], $matches)) {
                     $url .= $matches[1] . '/';
                 }
             }

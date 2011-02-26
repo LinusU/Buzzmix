@@ -10,7 +10,7 @@ class Buzzsql {
     
     static $searchable = null;
     
-    protected static function build_sql($where, $order_by, $limit) {
+    protected static function build_sql($where, $order_by, $limit, $group_by = array()) {
         
         $sql = '';
         
@@ -28,13 +28,34 @@ class Buzzsql {
                     $sql .= ' AND ';
                 }
                 
-                if(is_object($val)) {
-                    $val = $val->__get($val::get_primary());
+                if(is_numeric($key)) {
+                    $sql .= $val;
+                } else {
+                    
+                    if(is_object($val)) {
+                        $val = $val->__get($val::get_primary());
+                    }
+                    
+                    $sql .= "`$key` = '" . mysql_real_escape_string($val) . "'";
+                    
                 }
                 
-                $sql .= "`$key` = '" . mysql_real_escape_string($val) . "'";
-                
             }
+        }
+        
+        $first = true;
+        
+        foreach($group_by as $val) {
+            
+            if($first) {
+                $first = false;
+                $sql .= ' GROUP BY ';
+            } else {
+                $sql .= ', ';
+            }
+            
+            $sql .= "`$val`";
+            
         }
         
         $first = true;

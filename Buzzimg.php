@@ -79,6 +79,9 @@ class Buzzimg {
         die(0);
     }
     
+    function width() { return imagesx($this->image); }
+    function height() { return imagesy($this->image); }
+    
     function resize($width = null, $height = null) {
         
         if($width === null and $height === null) {
