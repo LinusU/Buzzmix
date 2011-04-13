@@ -29,10 +29,16 @@ class Buzzsql {
                 }
                 
                 if(is_numeric($key)) {
-                    $sql .= $val;
+                    
+                    if(is_a($val, __CLASS__)) {
+                        $sql .= "`_" . $val::get_table() . "` = '" . mysql_real_escape_string($val->__get($val::get_primary())) . "'";
+                    } else {
+                        $sql .= $val;
+                    }
+                    
                 } else {
                     
-                    if(is_object($val)) {
+                    if(is_a($val, __CLASS__)) {
                         $val = $val->__get($val::get_primary());
                     }
                     
@@ -128,6 +134,10 @@ class Buzzsql {
             return $this->update[$name];
         } elseif(isset($this->info[$name])) {
             return $this->info[$name];
+        } elseif(isset($this->update["_$name"])) {
+            return new $name($this->update["_$name"]);
+        } elseif(isset($this->info["_$name"])) {
+            return new $name($this->info["_$name"]);
         } else {
             return null;
         }
@@ -135,28 +145,43 @@ class Buzzsql {
     
     function __set($name,$value) {
         if(isset($this->info[$name])) {
+            if(is_a($value, __CLASS__)) {
+                $value = $value->__get($value::get_primary());
+            }
             if($this->info[$name] !== $value) {
                 $this->update[$name] = $value;
             } else {
                 unset($this->update[$name]);
             }
+        } elseif(isset($this->info["_$name"])) {
+            $this->__set("_$name", $value);
         }
     }
     
     function __isset($name) {
-        return isset($this->info[$name]);
+        if(isset($this->info[$name])) {
+            return true;
+        } elseif(isset($this->info["_$name"])) {
+            return true;
+        } else {
+            return false;
+        }
     }
     
     function __unset($name) {
         if(isset($this->update[$name])) {
             unset($this->update[$name]);
+        } elseif(isset($this->update["_$name"])) {
+            unset($this->update["_$name"]);
         }
     }
     
     function get_one($type) {
-        
-        return new $type($this->__get($type::get_table()));
-        
+        if(isset($this->info[$type::get_table()])) {
+            return new $type($this->__get($type::get_table()));
+        } elseif(isset($this->info["_" . $type::get_table()])) {
+            return new $type($this->__get("_" . $type::get_table()));
+        }
     }
     
     function get_foreign($type) {
@@ -265,8 +290,8 @@ class Buzzsql {
         $vals = array();
         
         foreach($data as $key => $val) {
-            $keys[] = mysql_real_escape_string($key);
-            $vals[] = mysql_real_escape_string($val);
+            $keys[] = mysql_real_escape_string(is_numeric($key)?"_".$val::get_table():$key);
+            $vals[] = mysql_real_escape_string(is_a($val, __CLASS__)?$val->__get($val::get_primary()):$val);
         }
         
         $re = mysql_query(sprintf(
