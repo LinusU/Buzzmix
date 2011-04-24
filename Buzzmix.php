@@ -386,14 +386,14 @@ class Buzzmix extends Smarty {
         
     }
     
-    function redirect($to, $keep_query_string = false) {
+    function redirect($to, $keep_query_string = false, $status = 303) {
         
         $url = $this->craft_url($to, $keep_query_string);
         
-        header('x', true, 303);
+        header('x', true, $status);
         header('Location: ' . $url);
         
-        printf('<h1>%s</h1>%s', "303 See Other", PHP_EOL);
+        printf('<h1>%u %s</h1>%s', $status, ($status == 301?"Moved Permanently":"See Other"), PHP_EOL);
         printf('<p>%s <a href="%2$s">%2$s</a></p>', "Please see:", $url);
         
         die(0);
