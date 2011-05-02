@@ -21,6 +21,8 @@ class Buzzmix extends Smarty {
     public $classes_dir = null;
     public $classes_suffix = ".class.php";
     
+    public $templates_suffix = ".tpl";
+    
     public $separator = ",";
     
     private $mysql = null;
@@ -189,7 +191,7 @@ class Buzzmix extends Smarty {
         $this->display_header();
         
         if($template === null) {
-            $template = "pages/" . $this->current_page . ".tpl";
+            $template = "pages/" . $this->current_page . $this->templates_suffix;
         }
         
         return parent::display($template, $cache_id, $compile_id, $parent);
