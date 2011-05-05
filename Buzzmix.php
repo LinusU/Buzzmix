@@ -346,7 +346,7 @@ class Buzzmix extends Smarty {
         
     }
     
-    function craft_url($to, $keep_query_string = false) {
+    function craft_url($to = '', $keep_query_string = false) {
         
         if(preg_match('/^https?\:\/\//', $to)) {
             
@@ -362,7 +362,7 @@ class Buzzmix extends Smarty {
             
             $url .= $_SERVER['HTTP_HOST'];
             
-            if($to[0] != '/') {
+            if(substr($to, 0, 1) != '/') {
                 if(preg_match('/^(.+)\/([^\/]*)\?' . (empty($_SERVER['QUERY_STRING'])?'?':'') . preg_quote($_SERVER['QUERY_STRING'], '/') . '$/', $_SERVER['REQUEST_URI'], $matches)) {
                     $url .= $matches[1] . '/';
                 } else {
