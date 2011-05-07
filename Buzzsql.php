@@ -66,18 +66,22 @@ class Buzzsql {
         
         $first = true;
         
-        foreach($order_by as $key => $val) {
-            if(in_array($val,array('ASC','DESC'))) {
-                
-                if($first) {
-                    $first = false;
-                    $sql .= ' ORDER BY ';
-                } else {
-                    $sql .= ', ';
+        if(is_string($order_by)) {
+            $sql .= ' ORDER BY ' . $order_by;
+        } else {
+            foreach($order_by as $key => $val) {
+                if(in_array($val,array('ASC','DESC'))) {
+                    
+                    if($first) {
+                        $first = false;
+                        $sql .= ' ORDER BY ';
+                    } else {
+                        $sql .= ', ';
+                    }
+                    
+                    $sql .= "`$key` $val";
+                    
                 }
-                
-                $sql .= "`$key` $val";
-                
             }
         }
         
@@ -210,6 +214,10 @@ class Buzzsql {
             ), $order_by, $limit
         );
         
+    }
+    
+    function changed() {
+        return (count($this->update) > 0);
     }
     
     function save() {
