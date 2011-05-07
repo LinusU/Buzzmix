@@ -322,9 +322,7 @@ class Buzzmix extends Smarty {
             if(file_exists($file)) {
                 
                 $this->current_page = implode('/', array_slice($parts, 0, $i));
-                $this->output_page($file, $parts, $uri);
-                
-                return true;
+                return $this->output_page($file, $parts, $uri);
                 
             }
             
@@ -340,9 +338,9 @@ class Buzzmix extends Smarty {
         
         $smarty = $this;
         
-        include $file;
+        $ret = include $file;
         
-        return true;
+        return ($ret === 1)?true:$ret;
         
     }
     
