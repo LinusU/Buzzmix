@@ -395,8 +395,14 @@ class Buzzmix extends Smarty {
         header('x', true, $status);
         header('Location: ' . $url);
         
-        printf('<h1>%u %s</h1>%s', $status, ($status == 301?"Moved Permanently":"See Other"), PHP_EOL);
-        printf('<p>%s <a href="%2$s">%2$s</a></p>', "Please see:", $url);
+        $this->_onlycontent();
+        
+        $title = sprintf("%u %s", $status, ($status == 301?"Moved Permanently":"See Other"));
+        
+        printf('<html><head><title>%s</title></head><body>%s', $title, PHP_EOL);
+        printf('<h1>%s</h1>%s', $title, PHP_EOL);
+        printf('<p>%s <a href="%2$s">%2$s</a></p>%s', "Please see:", $url, PHP_EOL);
+        printf('</body></html>');
         
         die(0);
         
