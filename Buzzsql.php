@@ -152,7 +152,7 @@ class Buzzsql {
             if(is_a($value, __CLASS__)) {
                 $value = $value->__get($value::get_primary());
             }
-            if($this->info[$name] !== $value) {
+            if($this->info[$name] != $value) {
                 $this->update[$name] = $value;
             } else {
                 unset($this->update[$name]);
