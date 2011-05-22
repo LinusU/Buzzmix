@@ -34,7 +34,7 @@ class Buzzauth extends Buzzsql {
         
         $self::$auth = $self::select_one(array(
             $self::$username => $username,
-            $self::$password => self::hash($password)
+            $self::$password => $self::hash($password)
         ));
         
         if($self::$auth !== false) {
