@@ -34,7 +34,7 @@ class Buzzauth extends Buzzsql {
         
         $self::$auth = $self::select_one(array(
             $self::$username => $username,
-            $self::$password => md5($password, true)
+            $self::$password => self::hash($password)
         ));
         
         if($self::$auth !== false) {
@@ -49,6 +49,10 @@ class Buzzauth extends Buzzsql {
         $_SESSION[$self::get_table()] = null;
         unset($_SESSION[$self::get_table()]);
         return true;
+    }
+    
+    static function hash($string) {
+        return md5($string, true);
     }
     
 }
