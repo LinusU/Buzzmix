@@ -1,95 +1,64 @@
 <?php
 
 if(!class_exists('Smarty')) {
-    require "smarty/Smarty.class.php";
+    require "smarty3/Smarty.class.php";
 }
 
 class Buzzmix extends Smarty {
     
-    public $header_tpl = null;
-    public $footer_tpl = null;
+    public $page_dir = null;
+    public $page_suffix = ".php";
     
-    public $css_dir = null;
-    public $css_suffix = ".css";
+    public $class_dir = null;
+    public $class_suffix = ".class.php";
     
-    public $pages_dir = null;
-    public $pages_suffix = ".php";
+    public $template_suffix = ".tpl";
     
-    public $images_dir = null;
-    public $images_suffix = "";
+    protected $headers = array();
+    protected $footers = array();
     
-    public $classes_dir = null;
-    public $classes_suffix = ".class.php";
+    protected $displayed = array(false, false);
     
-    public $templates_suffix = ".tpl";
-    
-    public $separator = ",";
-    
-    private $mysql = null;
-    private $current_page = null;
-    
-    private $content_type_override = null;
+    protected $mysql = null;
+    protected $is_cloned = false;
+    protected $current_page = null;
+    protected $content_type = "text/html";
     
     function __construct($base_dir = null) {
         parent::__construct();
         
-        if($this->_contenttype() === null) {
-            if(headers_sent()) {
-                $this->content_type_override = 'text/html; charset=utf-8';
-            } else {
-                header('Content-Type: text/html; charset=utf-8');
-            }
+        if(!headers_sent()) {
+            header('Content-Type: text/html; charset=utf-8');
         }
         
         if($base_dir !== null) {
             
-            while(substr($base_dir, -1) == "/") {
-                $base_dir = substr($base_dir, 0, -1);
-            }
+            $base_dir = rtrim($base_dir, "/");
             
-            /* Set the directories */
-            $this->css_dir      = $base_dir . '/css/';
-            $this->pages_dir    = $base_dir . '/pages/';
-            $this->images_dir   = $base_dir . '/images/';
-            $this->classes_dir  = $base_dir . '/classes/';
+            $this->page_dir  = $base_dir . '/pages/';
+            $this->class_dir = $base_dir . '/classes/';
             $this->compile_dir  = $base_dir . '/compiled/';
             $this->template_dir = $base_dir . '/templates/';
+            $this->plugins_dir[] = $base_dir . '/plugins/';
             
         }
         
         spl_autoload_register(array($this, '_autoload'));
-        
     }
     
     function __destruct() {
-        
-        $this->display_header();
-        
-        if($this->footer_tpl !== null) {
-            
-            $type = $this->_contenttype();
-            
-            if(substr($type, 0, 9) == "text/html") {
-                parent::display($this->footer_tpl);
-            }
-            
-            $this->footer_tpl = null;
-            
-        }
-        
-        if(method_exists(get_parent_class(), '__destruct')) {
-            parent::__destruct();
-        }
-        
+        $this->displayHeader();
+        $this->displayFooter();
+        parent::__destruct();
     }
     
     function _autoload($class) {
         
-        if($this->classes_dir === null) {
+        if($this->class_dir === null) {
             return false;
         }
         
-        $file = $this->classes_dir . $class . $this->classes_suffix;
+        $file = $this->class_dir . $class . $this->class_suffix;
         
         if(!file_exists($file)) {
             return false;
@@ -98,40 +67,38 @@ class Buzzmix extends Smarty {
         include $file;
         
         return true;
-        
     }
     
-    function _onlycontent() {
-        
-        $this->header_tpl = null;
-        $this->footer_tpl = null;
-        
-    }
+    function __clone() { $this->is_cloned = true; }
     
-    function _contenttype() {
+    function setHeader($tpl, $type = 'text/html') { $this->headers[$type] = $tpl; }
+    function setFooter($tpl, $type = 'text/html') { $this->footers[$type] = $tpl; }
+    
+    function onlyContent() { $this->displayed = array(true, true); }
+    
+    function contentType($type, $subtype = null, $parameters = array()) {
         
-        if($this->content_type_override !== null) {
-            return $this->content_type_override;
+        if($subtype === null) {
+            $subtype = $type;
+            $type = "text";
         }
         
-        $headers = headers_list();
-        
-        foreach($headers as $cur) {
-            
-            list($key, $val) = explode(':', $cur, 2);
-            
-            if(trim($key) == 'Content-Type') {
-                return trim($val);
-            }
-            
+        if($type == "text" && !isset($parameters['charset'])) {
+            $parameters['charset'] = 'utf-8';
         }
         
-        return null;
+        $p = '';
         
+        foreach($parameters as $key => $val) {
+            $p .= "; $key=$val";
+        }
+        
+        header("Content-Type: $type/$subtype$p");
+        
+        $this->content_type = ($type . "/" . $subtype);
     }
     
-    function mysql_setup($hostname, $username, $password, $database) {
-        
+    function mysqlSetup($hostname, $username, $password, $database) {
         $this->mysql = array(
             'connected' => false,
             'hostname' => $hostname,
@@ -139,10 +106,9 @@ class Buzzmix extends Smarty {
             'password' => $password,
             'database' => $database
         );
-        
     }
     
-    function mysql_connect() {
+    function mysqlConnect() {
         
         if($this->mysql === null) {
             return false;
@@ -156,121 +122,48 @@ class Buzzmix extends Smarty {
         mysql_selectdb($this->mysql['database']);
         mysql_set_charset("UTF8");
         
-        $this->mysql['connected'] = true;
+        return ($this->mysql['connected'] = true);
+    }
+    
+    protected function displayHeader() {
         
-        return true;
+        if($this->displayed[0] || $this->is_cloned) { return ; }
+        if(empty($this->headers[$this->content_type])) { return ; }
+        
+        $content = ob_get_clean();
+        
+        parent::display($this->headers[$this->content_type]);
+        $this->displayed[0] = true;
+        
+        if($content !== false) { echo $content; }
         
     }
     
-    function display_header() {
+    protected function displayFooter() {
         
-        if($this->header_tpl !== null) {
-            
-            $type = $this->_contenttype();
-            
-            if(substr($type, 0, 9) == "text/html") {
-                
-                $content = ob_get_clean();
-                
-                parent::display($this->header_tpl);
-                
-                if($content !== false) {
-                    echo $content;
-                }
-                
-            }
-            
-            $this->header_tpl = null;
-            
-        }
+        if($this->displayed[1] || $this->is_cloned) { return ; }
+        if(empty($this->footers[$this->content_type])) { return ; }
+        
+        parent::display($this->footers[$this->content_type]);
+        $this->displayed[1] = true;
         
     }
     
     function display($template = null, $cache_id = null, $compile_id = null, $parent = null) {
         
-        $this->display_header();
+        $this->displayHeader();
         
         if($template === null) {
-            $template = "pages/" . $this->current_page . $this->templates_suffix;
+            $template = "pages/" . $this->current_page . $this->template_suffix;
         }
         
         return parent::display($template, $cache_id, $compile_id, $parent);
-        
     }
     
-    function handle_css() {
+    function handleRequest($uri) {
         
-        if($this->css_dir === null) {
-            throw new Exception("The css directory is not set.");
-        }
-        
-        header('Content-Type: text/css');
-        
-        $files = glob($this->css_dir . '*' . $this->css_suffix);
-        
-        foreach($files as $file) {
-            
-            echo PHP_EOL . '/* ' . basename($file) . ' */' . PHP_EOL;
-            
-            readfile($file);
-            
-            echo PHP_EOL;
-            
-        }
-        
-        $this->_onlycontent();
-        die(0);
-        
-    }
-    
-    function handle_image($image) {
-        
-        if($this->images_dir === null) {
-            throw new Exception("The images directory is not set.");
-        }
-        
-        $file = $this->images_dir . str_replace($this->separator, '/', $image) . $this->images_suffix;
-        
-        if(!file_exists($file)) {
-            return false;
-        }
-        
-        $size = filesize($file);
-        $etag = md5($file . ":" . $size);
-        
-        if(isset($_SERVER['HTTP_IF_NONE_MATCH']) and $_SERVER['HTTP_IF_NONE_MATCH'] == $etag) {
-            
-            header('HTTP/1.1 304 Not Modified');
-            
-            $this->_onlycontent();
-            die(0);
-            
-        }
-        
-        if(substr($file, -4) == ".png") {
-            header('Content-Type: image/png');
-        } elseif(substr($file, -4) == ".jpg") {
-            header('Content-Type: image/jpeg');
-        } elseif(substr($file, -4) == ".gif") {
-            header('Content-Type: image/gif');
-        } else {
-            header('Content-Type: image/png');
-        }
-        
-        header('Content-Length: ' . $size);
-        header('ETag: ' . $etag);
-        
-        readfile($file);
-        
-        $this->_onlycontent();
-        die(0);
-        
-    }
-    
-    function handle_request($uri) {
-        
-        while(substr($uri, 0, 1) == "/") {
-            $uri = substr($uri, 1);
+        if($this->page_dir === null) {
+            throw new Exception("The pages directory is not set.");
         }
         
         $pos = strpos($uri, '?');
@@ -279,72 +172,52 @@ class Buzzmix extends Smarty {
             $uri = substr($uri, 0, $pos);
         }
         
-        while(substr($uri, -1) == "/") {
-            $uri = substr($uri, 0, -1);
-        }
-        
-        if(preg_match('/^css$/', $uri) == 1) {
-            return $this->handle_css();
-        }
-        
-        if(preg_match('/^img' . preg_quote($this->separator, "/") . '(([a-zA-Z0-9_+-]+' . preg_quote($this->separator, "/") . ')*[a-zA-Z0-9_+-]+(\.[a-z]+)?)/', $uri, $matches) == 1) {
-            return $this->handle_image($matches[1]);
-        }
-        
-        if($this->pages_dir === null) {
-            throw new Exception("The pages directory is not set.");
-        }
-        
-        if($this->separator != "/") {
-            if(strpos($uri, "/") !== false) {
-                return false;
-            }
-        }
-        
-        if(strpos($uri, ".") !== false) {
-            return false;
-        }
-        
         ob_start();
         
-        $this->mysql_connect();
-        
-        $parts = explode($this->separator, $uri);
-        
-        for($i = count($parts); $i > 0; $i--) {
+        if(strpos($uri, "..") !== false) {
+            $status = 403;
+        } else {
             
-            $file = (
-                $this->pages_dir .
-                implode("/", array_slice($parts, 0, $i)) . 
-                $this->pages_suffix
-            );
+            $this->mysqlConnect();
             
-            if(file_exists($file)) {
+            $parts = explode("/", trim($uri, "/"));
+            $status = 404;
+            
+            for($i = count($parts); $i > 0; $i--) {
                 
-                $this->current_page = implode('/', array_slice($parts, 0, $i));
-                return $this->output_page($file, $parts, $uri);
+                $name = implode("/", array_slice($parts, 0, $i));
+                $name .= (is_dir($this->page_dir . $name)?"/index":"");
+                $file = $this->page_dir . $name . $this->page_suffix;
+                
+                if(file_exists($file)) {
+                    $this->current_page = $name;
+                    $status = $this->outputPage($file, $parts, $uri);
+                    break;
+                }
                 
             }
             
+        }
+        
+        if(!headers_sent()) {
+            header('x', true, $status);
         }
         
         ob_end_flush();
         
-        return false;
-        
+        return $status;
     }
     
-    function output_page($file, $parts, $uri) {
+    function outputPage($file, $parts, $uri) {
         
         $smarty = $this;
         
-        $ret = include $file;
+        $r = include $file;
         
-        return ($ret === 1)?true:$ret;
-        
+        return (($r === 1 || $r === true)?200:(($r === false)?500:$r));
     }
     
-    function craft_url($to = '', $keep_query_string = false) {
+    function craftUrl($to = '', $keep_query_string = false) {
         
         if(preg_match('/^https?\:\/\//', $to)) {
             
@@ -373,13 +246,11 @@ class Buzzmix extends Smarty {
         }
         
         if($keep_query_string and strlen($_SERVER['QUERY_STRING']) > 0) {
-            
             if(strpos($url, "?") === false) {
                 $url .= "?" . $_SERVER['QUERY_STRING'];
             } else {
                 $url .= "&" . $_SERVER['QUERY_STRING'];
             }
-            
         }
         
         return $url;
@@ -388,12 +259,12 @@ class Buzzmix extends Smarty {
     
     function redirect($to, $keep_query_string = false, $status = 303) {
         
-        $url = $this->craft_url($to, $keep_query_string);
+        $url = $this->craftUrl($to, $keep_query_string);
         
         header('x', true, $status);
         header('Location: ' . $url);
         
-        $this->_onlycontent();
+        $this->onlyContent();
         
         $title = sprintf("%u %s", $status, ($status == 301?"Moved Permanently":"See Other"));
         
@@ -403,7 +274,6 @@ class Buzzmix extends Smarty {
         printf('</body></html>');
         
         die(0);
-        
     }
     
 }
