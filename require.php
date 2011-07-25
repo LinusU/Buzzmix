@@ -1,19 +1,12 @@
 <?php
 
 spl_autoload_register(function ($className) {
-    
-    if(substr($className, 0, 4) != 'Buzz') {
-        return false;
+    if(
+        $className == "Buzzmix" ||
+        $className == "Buzzsql" ||
+        $className == "Buzzauth" ||
+        $className == "Buzzimg"
+    ) {
+        require (dirname(__FILE__) . '/' . $className . '.php');
     }
-    
-    $file = dirname(__FILE__) . '/' . $className . '.php';
-    
-    if(!file_exists($file)) {
-        return false;
-    }
-    
-    include $file;
-    
-    return true;
-    
 });
