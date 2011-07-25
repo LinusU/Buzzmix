@@ -111,7 +111,6 @@ class Buzzimg {
         $this->image = $out;
         
         return $this;
-        
     }
     
     function thumbnail($width, $height) {
@@ -144,7 +143,6 @@ class Buzzimg {
         $this->image = $out;
         
         return $this;
-        
     }
     
 }
