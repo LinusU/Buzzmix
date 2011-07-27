@@ -15,9 +15,9 @@ class Buzzauth extends Buzzsql {
         }
         
         if(isset($_SESSION[$self::get_table()])) {
-            $self::$auth = $self::select_one(array(
+            $self::$auth = $self::select()->where(array(
                 $self::get_primary() => $_SESSION[$self::get_table()]
-            ));
+            ))->one();
         }
         
         return $self::$auth;
@@ -32,16 +32,16 @@ class Buzzauth extends Buzzsql {
         
         $self = get_called_class();
         
-        $self::$auth = $self::select_one(array(
+        $self::$auth = $self::select()->where(array(
             $self::$username => $username,
             $self::$password => $self::hash($password)
-        ));
+        ))->one();
         
         if($self::$auth !== false) {
             $_SESSION[$self::get_table()] = $self::$auth->__get($self::get_primary());
         }
         
-        return ($self::$auth !== false);
+        return $self::$auth;
     }
     
     static function logout() {
@@ -53,6 +53,18 @@ class Buzzauth extends Buzzsql {
     
     static function hash($string) {
         return md5($string, true);
+    }
+    
+    static function randomPassword($length = 6) {
+        
+        $ret = '';
+        $chr = "abcdefghkmnpqrstuvwxyzABCDEFGHKLMNPRST23456789";
+        
+        while(strlen($ret) < $length) {
+            $ret .= $chr[rand(0, strlen($chr) - 1)];
+        }
+        
+        return $ret;
     }
     
 }

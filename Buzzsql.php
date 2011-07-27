@@ -4,128 +4,33 @@ class Buzzsql {
     
     protected $info = array();
     protected $update = array();
+    protected $primary_id = null;
     
     static $table = null;
     static $primary = null;
     
-    static $searchable = null;
-    
-    protected static function build_sql($where, $order_by, $limit, $group_by = array()) {
-        
-        $sql = '';
-        
-        $first = true;
-        
-        if(is_string($where)) {
-            $sql .= ' WHERE ' . $where;
-        } else {
-            foreach($where as $key => $val) {
-                
-                if($first) {
-                    $first = false;
-                    $sql .= ' WHERE ';
-                } else {
-                    $sql .= ' AND ';
-                }
-                
-                if(is_numeric($key)) {
-                    
-                    if(is_a($val, __CLASS__)) {
-                        $sql .= "`_" . $val::get_table() . "` = '" . mysql_real_escape_string($val->__get($val::get_primary())) . "'";
-                    } else {
-                        $sql .= $val;
-                    }
-                    
-                } else {
-                    
-                    if(is_a($val, __CLASS__)) {
-                        $val = $val->__get($val::get_primary());
-                    }
-                    
-                    $sql .= "`$key` = '" . mysql_real_escape_string($val) . "'";
-                    
-                }
-                
-            }
-        }
-        
-        $first = true;
-        
-        foreach($group_by as $val) {
-            
-            if($first) {
-                $first = false;
-                $sql .= ' GROUP BY ';
-            } else {
-                $sql .= ', ';
-            }
-            
-            $sql .= "`$val`";
-            
-        }
-        
-        $first = true;
-        
-        if(is_string($order_by)) {
-            $sql .= ' ORDER BY ' . $order_by;
-        } else {
-            foreach($order_by as $key => $val) {
-                if(in_array($val,array('ASC','DESC'))) {
-                    
-                    if($first) {
-                        $first = false;
-                        $sql .= ' ORDER BY ';
-                    } else {
-                        $sql .= ', ';
-                    }
-                    
-                    $sql .= "`$key` $val";
-                    
-                }
-            }
-        }
-        
-        if($limit !== null) {
-            
-            $sql .= ' LIMIT ' . $limit;
-            
-        }
-        
-        return $sql;
-        
-    }
+    static $link = '%s_%s';
     
     static function get_table() {
-        
         $self = get_called_class();
-        
-        if($self::$table === null) {
-            return $self;
-        } else {
-            return $self::$table;
-        }
-        
+        return (is_null($self::$table)?$self:$self::$table);
     }
     
     static function get_primary() {
-        
         $self = get_called_class();
-        
-        if($self::$primary === null) {
-            return 'id';
-        } else {
-            return $self::$primary;
-        }
-        
+        return (is_null($self::$primary)?'id':$self::$primary);
     }
     
     function __construct($primaryOrRow = null) {
-        if(is_array($primaryOrRow)) {
+        if(is_a($primaryOrRow, __CLASS__)) {
+            $self = get_called_class();
+            $this->primary_id = $primaryOrRow->__get(sprintf($self::$link, $self::get_table(), $self::get_primary()));
+        } elseif(is_array($primaryOrRow)) {
             $this->info = $primaryOrRow;
-        } elseif($primaryOrRow === null) {
-            // Null!
-        } else {
-            $this->load($primaryOrRow);
+        } elseif(is_object($primaryOrRow)) {
+            $this->info = (array) $primaryOrRow;
+        } elseif(!is_null($primaryOrRow)) {
+            $this->primary_id = $primaryOrRow;
         }
     }
     
@@ -134,86 +39,53 @@ class Buzzsql {
     }
     
     function __get($name) {
+        
+        $self = get_called_class();
+        
+        if(!is_null($this->primary_id)) {
+            if($name == $self::get_primary()) {
+                return $this->primary_id;
+            } else {
+                $this->load();
+            }
+        }
+        
         if(isset($this->update[$name])) {
             return $this->update[$name];
         } elseif(isset($this->info[$name])) {
             return $this->info[$name];
-        } elseif(isset($this->update["_$name"])) {
-            return new $name($this->update["_$name"]);
-        } elseif(isset($this->info["_$name"])) {
-            return new $name($this->info["_$name"]);
         } else {
             return null;
         }
+        
     }
     
     function __set($name,$value) {
+        
+        if(is_a($value, __CLASS__)) {
+            $value = $value->__get($value::get_primary());
+        }
+        
         if(isset($this->info[$name])) {
-            if(is_a($value, __CLASS__)) {
-                $value = $value->__get($value::get_primary());
-            }
             if($this->info[$name] != $value) {
                 $this->update[$name] = $value;
             } else {
                 unset($this->update[$name]);
             }
-        } elseif(isset($this->info["_$name"])) {
-            $this->__set("_$name", $value);
+        } elseif(!is_null($this->primary_id)) {
+            $this->update[$name] = $value;
         }
+        
     }
     
     function __isset($name) {
-        if(isset($this->info[$name])) {
-            return true;
-        } elseif(isset($this->info["_$name"])) {
-            return true;
-        } else {
-            return false;
-        }
+        return isset($this->info[$name]);
     }
     
     function __unset($name) {
         if(isset($this->update[$name])) {
             unset($this->update[$name]);
-        } elseif(isset($this->update["_$name"])) {
-            unset($this->update["_$name"]);
         }
-    }
-    
-    function get_one($type) {
-        if(isset($this->info[$type::get_table()])) {
-            return new $type($this->__get($type::get_table()));
-        } elseif(isset($this->info["_" . $type::get_table()])) {
-            return new $type($this->__get("_" . $type::get_table()));
-        }
-    }
-    
-    function get_foreign($type) {
-        
-        $self = get_called_class();
-        
-        $ret = $type::select(array(
-            $self::get_table() => $this->__get($self::get_primary())
-        ));
-        
-        if(count($ret) > 0) {
-            return $ret[0];
-        } else {
-            return false;
-        }
-        
-    }
-    
-    function get_many($type, $order_by = array(), $limit = null) {
-        
-        $self = get_called_class();
-        
-        return $type::select(
-            array(
-                $self::get_table() => $this->__get($self::get_primary())
-            ), $order_by, $limit
-        );
-        
     }
     
     function changed() {
@@ -227,32 +99,13 @@ class Buzzsql {
         }
         
         $self = get_called_class();
-        $update = '';
         
-        foreach($this->update as $key => $val) {
-            
-            if($update != '') {
-                $update .= ',';
-            }
-            
-            if($val === null) {
-                
-                $update .= "`$key`=NULL";
-                
-            } else {
-                
-                $update .= "`$key`='" . mysql_real_escape_string($val) . "'";
-                
-            }
-            
-        }
+        $stmt = $self::update()->set($this->update)->where(
+            "`?` = '?'", $self::get_primary(),
+            $this->__get($self::get_primary())
+        );
         
-        if(mysql_query(sprintf(
-            "UPDATE `%s` SET %s WHERE `%s`='%s'",
-            $self::get_table(), $update, $self::get_primary(),
-            mysql_real_escape_string($this->__get($self::get_primary()))
-        ))) {
-            // NOTE: Should check mysql_affected_rows before updating local??
+        if($stmt->run()) {
             $this->info = $this->update + $this->info;
             $this->update = array();
             return (mysql_affected_rows() > 0);
@@ -262,24 +115,28 @@ class Buzzsql {
         
     }
     
-    function load($primary) {
+    function load($primary = null) {
         
         $self = get_called_class();
         
-        $re = mysql_query(sprintf(
-            "SELECT * FROM `%s` WHERE `%s`='%s'",
-            $self::get_table(), $self::get_primary(),
-            mysql_real_escape_string($primary)
-        ));
+        $re = Buzzstmt::construct()->select()->from($self::get_table())->where(
+            "`?` = '?'", $self::get_primary(),
+            (is_null($primary)?$this->primary_id:$primary)
+        )->one();
         
-        if($re !== false and mysql_num_rows($re) > 0) {
-            $this->info = mysql_fetch_assoc($re);
-            $this->update = array();
-            return true;
-        } else {
+        if($re === false) {
             return false;
         }
         
+        $this->info = (array) $re;
+        
+        if(is_null($this->primary_id)) {
+            $this->update = array();
+        } else {
+            $this->primary_id = null;
+        }
+        
+        return true;
     }
     
     function get_row() {
@@ -291,117 +148,20 @@ class Buzzsql {
     }
     
     static function insert($data) {
-        
         $self = get_called_class();
-        
-        $keys = array();
-        $vals = array();
-        
-        foreach($data as $key => $val) {
-            $keys[] = mysql_real_escape_string(is_numeric($key)?"_".$val::get_table():$key);
-            $vals[] = mysql_real_escape_string(is_a($val, __CLASS__)?$val->__get($val::get_primary()):$val);
-        }
-        
-        $re = mysql_query(sprintf(
-            "INSERT INTO `%s` (`%s`) VALUES('%s')",
-            $self::get_table(), implode("`,`",$keys),
-            implode("','",$vals)
-        ));
-        
-        if($re === false) {
-            return false;
-        } else {
-            return new $self(mysql_insert_id());
-        }
-        
+        $stmt = Buzzstmt::construct($self)->insert()->into($self::get_table())->values($data);
+        return ($stmt->run()?new $self(mysql_insert_id()):false);
     }
     
-    static function search($query, $where = array(), $order_by = array(), $limit = null) {
-        
+    static function select() {
         $self = get_called_class();
-        
-        if(empty($self::$searchable)) {
-            throw new Exception("The table $self is not searchable.");
-        }
-        
-        $sql = trim($self::build_sql($where, $order_by, $limit));
-        
-        if(substr($sql, 0, 5) == "WHERE") {
-            $sql = "AND" . substr($sql, 5);
-        }
-        
-        return $self::return_many(mysql_query(sprintf(
-            "SELECT * FROM `%s` WHERE MATCH(`%s`) AGAINST('%s') %s",
-            $self::get_table(),
-            implode('`,`', $self::$searchable),
-            mysql_real_escape_string($query),
-            $sql
-        )), $self);
-        
+        $stmt = call_user_func_array(array(new Buzzstmt($self), 'select'), func_get_args());
+        return $stmt->from($self::get_table());
     }
     
-    static function select($where = array(), $order_by = array(), $limit = null) {
-        
+    static function update() {
         $self = get_called_class();
-        
-        return $self::return_many(mysql_query(sprintf(
-            'SELECT * FROM `%s`%s',
-            $self::get_table(),
-            $self::build_sql($where, $order_by, $limit)
-        )), $self);
-        
-    }
-    
-    static function select_one($where = array(), $order_by = array()) {
-        
-        $self = get_called_class();
-        
-        $ret = $self::select($where, $order_by, 1);
-        
-        if(count($ret) == 1) {
-            return $ret[0];
-        } else {
-            return false;
-        }
-        
-    }
-    
-    static function return_many($result, $type = null) {
-        
-        if($result === false) {
-            return false;
-        }
-        
-        $ret = array();
-        
-        while($row = mysql_fetch_assoc($result)) {
-            if($type === null) {
-                $ret[] = (object) $row;
-            } else {
-                $ret[] = new $type($row);
-            }
-        }
-        
-        return $ret;
-        
-    }
-    
-    static function return_one($result, $type = null) {
-        
-        if($result === false) {
-            return false;
-        }
-        
-        if(mysql_num_rows($result) == 0) {
-            return false;
-        }
-        
-        if($type === null) {
-            return mysql_fetch_object($result);
-        } else {
-            return new $type(mysql_fetch_assoc($result));
-        }
-        
+        return Buzzstmt::construct($self)->update($self::get_table());
     }
     
 }

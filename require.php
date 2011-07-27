@@ -4,6 +4,7 @@ spl_autoload_register(function ($className) {
     if(
         $className == "Buzzmix" ||
         $className == "Buzzsql" ||
+        $className == "Buzzstmt" ||
         $className == "Buzzauth" ||
         $className == "Buzzimg"
     ) {
