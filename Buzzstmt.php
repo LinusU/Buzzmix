@@ -47,6 +47,10 @@ class Buzzstmt {
         if(is_array($condition)) {
             foreach($condition as $key => $val) {
                 
+                if(is_numeric($key) && is_string($val)) {
+                    $r .= ($r?' AND ':'') . $val; continue;
+                }
+                
                 $r .= ($r?' AND ':'') . self::escape_column(mysql_real_escape_string(
                     is_numeric($key)?sprintf($val::$link, $val::get_table(), $val::get_primary()):$key
                 )) . '=';
