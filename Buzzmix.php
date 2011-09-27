@@ -119,7 +119,7 @@ class Buzzmix extends Smarty {
         }
         
         mysql_connect($this->mysql['hostname'], $this->mysql['username'], $this->mysql['password']);
-        mysql_selectdb($this->mysql['database']);
+        mysql_select_db($this->mysql['database']);
         mysql_set_charset("UTF8");
         
         return ($this->mysql['connected'] = true);
