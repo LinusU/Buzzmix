@@ -37,9 +37,9 @@ class Buzzmix extends Smarty {
             
             $this->page_dir  = $base_dir . '/pages/';
             $this->class_dir = $base_dir . '/classes/';
-            $this->compile_dir  = $base_dir . '/compiled/';
-            $this->template_dir = $base_dir . '/templates/';
-            $this->plugins_dir[] = $base_dir . '/plugins/';
+            $this->setCompileDir($base_dir . '/compiled/');
+            $this->setTemplateDir($base_dir . '/templates/');
+            $this->addPluginsDir($base_dir . '/plugins/');
             
         }
         
