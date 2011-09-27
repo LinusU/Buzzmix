@@ -1,7 +1,7 @@
 <?php
 
 if(!class_exists('Smarty')) {
-    require "smarty3/Smarty.class.php";
+    require (dirname(__FILE__) . "/smarty3/Smarty.class.php");
 }
 
 class Buzzmix extends Smarty {
