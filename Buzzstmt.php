@@ -77,16 +77,38 @@ class Buzzstmt {
         return $r;
     }
     
-    static function construct($type = null) {
-        return new self($type);
+    static function construct($type = null, $sql = '') {
+        $params = func_get_args();
+        $type = array_shift($params);
+        $stmt = new self($type);
+        return ($sql===''?$stmt:call_user_func_array(array($stmt, 'append'), $params));
     }
     
-    function __construct($type = null) {
+    function __construct($type = null, $sql = '') {
+        $params = func_get_args();
+        $type = array_shift($params);
         $this->type = $type;
+        if($sql !== '') { call_user_func_array(array($this, 'append'), $params); }
     }
     
-    protected function append($str) {
-        $this->sql .= $str; return $this;
+    protected function append($sql) {
+        
+        if(func_num_args() == 1) {
+            $this->sql .= $sql;
+            return $this;
+        }
+        
+        $k = 0;
+        
+        for($i=0; $i<strlen($sql); $i++) {
+            if($sql[$i] == '?') {
+                $this->sql .= mysql_real_escape_string(func_get_arg(++$k));
+            } else {
+                $this->sql .= $sql[$i];
+            }
+        }
+        
+        return $this;
     }
     
     function select() {
