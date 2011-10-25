@@ -79,15 +79,22 @@ class Buzzstmt {
     
     static function construct($type = null, $sql = '') {
         $params = func_get_args();
-        $type = array_shift($params);
-        $stmt = new self($type);
+        if($type === null || strpos($type, ' ') === false) {
+            $stmt = new self(array_shift($params));
+        } else {
+            $stmt = new self();
+            $sql = $type;
+        }
         return ($sql===''?$stmt:call_user_func_array(array($stmt, 'append'), $params));
     }
     
     function __construct($type = null, $sql = '') {
         $params = func_get_args();
-        $type = array_shift($params);
-        $this->type = $type;
+        if($type === null || strpos($type, ' ') === false) {
+            $this->type = array_shift($params);
+        } else {
+            $sql = $type;
+        }
         if($sql !== '') { call_user_func_array(array($this, 'append'), $params); }
     }
     
