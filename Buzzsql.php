@@ -140,10 +140,12 @@ class Buzzsql {
     }
     
     function get_row() {
+        if($this->primary_id !== null) { $this->load(); }
         return $this->update + $this->info;
     }
     
     function get_columns() {
+        if($this->primary_id !== null) { $this->load(); }
         return array_keys($this->info);
     }
     
