@@ -46,6 +46,7 @@ class Buzzauth extends Buzzsql {
     
     static function logout() {
         $self = get_called_class();
+        $self::$auth = false;
         $_SESSION[$self::get_table()] = null;
         unset($_SESSION[$self::get_table()]);
         return true;
