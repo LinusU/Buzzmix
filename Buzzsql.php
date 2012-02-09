@@ -22,7 +22,7 @@ class Buzzsql {
     }
     
     function __construct($primaryOrRow = null) {
-        if(is_a($primaryOrRow, __CLASS__)) {
+        if($primaryOrRow instanceof self) {
             $self = get_called_class();
             $this->primary_id = $primaryOrRow->__get(sprintf($self::$link, $self::get_table(), $self::get_primary()));
         } elseif(is_array($primaryOrRow)) {
@@ -62,7 +62,7 @@ class Buzzsql {
     
     function __set($name,$value) {
         
-        if(is_a($value, __CLASS__)) {
+        if($value instanceof self) {
             $value = $value->__get($value::get_primary());
         }
         

@@ -36,7 +36,7 @@ class Buzzstmt {
         
         $r = '';
         
-        if(is_a($condition, 'Buzzsql')) {
+        if($condition instanceof Buzzsql) {
             $condition = array_merge(array($condition), $substitutes);
         }
         
@@ -59,7 +59,7 @@ class Buzzstmt {
                     $r .= 'NULL';
                 } else {
                     $r .= ('\'' . mysql_real_escape_string(
-                        is_a($val, 'Buzzsql')?$val->__get($val::get_primary()):$val
+                        ($val instanceof Buzzsql)?$val->__get($val::get_primary()):$val
                     ) . '\'');
                 }
                 
@@ -182,7 +182,7 @@ class Buzzstmt {
                 $this->append('NULL');
             } else {
                 $this->append('\'' . mysql_real_escape_string(
-                    is_a($val, 'Buzzsql')?$val->__get($val::get_primary()):$val
+                    ($val instanceof Buzzsql)?$val->__get($val::get_primary()):$val
                 ) . '\'');
             }
             
