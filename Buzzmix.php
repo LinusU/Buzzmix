@@ -254,7 +254,6 @@ class Buzzmix extends Smarty {
         }
         
         return $url;
-        
     }
     
     function redirect($to, $keep_query_string = false, $status = 303) {
@@ -268,12 +267,10 @@ class Buzzmix extends Smarty {
         
         $title = sprintf("%u %s", $status, ($status == 301?"Moved Permanently":"See Other"));
         
-        printf('<html><head><title>%s</title></head><body>%s', $title, PHP_EOL);
         printf('<h1>%s</h1>%s', $title, PHP_EOL);
         printf('<p>%s <a href="%2$s">%2$s</a></p>%s', "Please see:", $url, PHP_EOL);
-        printf('</body></html>');
         
-        die(0);
+        return $status;
     }
     
 }
