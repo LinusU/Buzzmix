@@ -111,16 +111,20 @@ class Buzzmix extends Smarty {
     function mysqlConnect() {
         
         if($this->mysql === null) {
-            return false;
+            throw new Buzzexcp("No MySQL host specified");
         }
         
         if($this->mysql['connected']) {
             return true;
         }
         
-        mysql_connect($this->mysql['hostname'], $this->mysql['username'], $this->mysql['password']);
-        mysql_select_db($this->mysql['database']);
-        mysql_set_charset("UTF8");
+        try {
+            mysql_connect($this->mysql['hostname'], $this->mysql['username'], $this->mysql['password']);
+            mysql_select_db($this->mysql['database']);
+            mysql_set_charset("UTF8");
+        } catch(Exception $e) {
+            throw new Buzzexcp("Couldn't connect to database", 0, $e);
+        }
         
         return ($this->mysql['connected'] = true);
     }

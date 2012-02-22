@@ -125,7 +125,7 @@ class Buzzsql {
         )->one();
         
         if($re === false) {
-            return false;
+            throw new Buzzexcp("Row does not exists");
         }
         
         $this->info = (array) $re;

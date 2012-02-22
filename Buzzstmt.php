@@ -244,7 +244,7 @@ class Buzzstmt {
         $result = $this->run();
         
         if($result === false) {
-            return false;
+            throw new Buzzexcp("MySQL error: " . mysql_error());
         }
         
         $ret = array();
@@ -260,7 +260,11 @@ class Buzzstmt {
         
         $result = $this->limit(1)->run();
         
-        if($result === false || mysql_num_rows($result) == 0) {
+        if($result === false) {
+            throw new Buzzexcp("MySQL error: " . mysql_error());
+        }
+        
+        if(mysql_num_rows($result) == 0) {
             return false;
         }
         
