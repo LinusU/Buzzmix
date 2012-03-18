@@ -207,7 +207,8 @@ class Buzzmix extends Smarty {
             header('x', true, $status);
         }
         
-        ob_end_flush();
+        $l = ob_get_length();
+        if($l !== false) { ( $l > 0 ? ob_end_flush() : ob_end_clean() ); }
         
         return $status;
     }
