@@ -182,7 +182,9 @@ class Buzzmix extends Smarty {
             $status = 403;
         } else {
             
-            $this->mysqlConnect();
+            if($this->mysql !== null) {
+                $this->mysqlConnect();
+            }
             
             $parts = explode("/", trim($uri, "/"));
             $status = 404;
