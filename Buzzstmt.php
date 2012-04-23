@@ -236,16 +236,19 @@ class Buzzstmt {
     }
     
     function run() {
-        return mysql_query($this->sql);
+        
+        $result = mysql_query($this->sql);
+        
+        if($result === false) {
+            throw new Buzzexcp("MySQL error: " . mysql_error());
+        }
+        
+        return $result;
     }
     
     function many() {
         
         $result = $this->run();
-        
-        if($result === false) {
-            throw new Buzzexcp("MySQL error: " . mysql_error());
-        }
         
         $ret = array();
         
@@ -259,10 +262,6 @@ class Buzzstmt {
     function one() {
         
         $result = $this->limit(1)->run();
-        
-        if($result === false) {
-            throw new Buzzexcp("MySQL error: " . mysql_error());
-        }
         
         if(mysql_num_rows($result) == 0) {
             return false;
