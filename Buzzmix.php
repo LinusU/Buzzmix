@@ -87,6 +87,10 @@ class Buzzmix extends Smarty {
             $parameters['charset'] = 'utf-8';
         }
         
+        if($type == "text" && $subtype == "json") {
+            $type = "application";
+        }
+        
         $p = '';
         
         foreach($parameters as $key => $val) {
