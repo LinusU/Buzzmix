@@ -165,7 +165,13 @@ class Buzzmix extends Smarty {
             $template = "pages/" . $this->current_page . $this->template_suffix;
         }
         
-        return parent::display($template, $cache_id, $compile_id, $parent);
+        try {
+            parent::display($template, $cache_id, $compile_id, $parent);
+        } catch(SmartyException $e) {
+            return ( $this->templateExists($template) ? 500 : 404 );
+        }
+        
+        return 200;
     }
     
     function handleRequest($uri) {
