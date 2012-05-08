@@ -282,10 +282,27 @@ class Buzzmix extends Smarty {
         
         $this->onlyContent();
         
-        $title = sprintf("%u %s", $status, ($status == 301?"Moved Permanently":"See Other"));
+        switch($status) {
+            case 301: $title = 'Moved Permanently'; break;
+            case 302: $title = 'Moved Temporarily'; break;
+            case 303: $title = 'See Other'; break;
+            default: $title = '';
+        }
         
-        printf('<h1>%s</h1>%s', $title, PHP_EOL);
-        printf('<p>%s <a href="%2$s">%2$s</a></p>%s', "Please see:", $url, PHP_EOL);
+        printf(
+            '<!DOCTYPE html>' . PHP_EOL .
+            '<html>' . PHP_EOL .
+            '<head><title>%1$u %2$s</title></head>' . PHP_EOL .
+            '<body>' .
+            '<h1>%1$u %2$s</h1>' .
+            '<p>%3$s <a href="%4$s">%4$s</a></p>' .
+            '</body>' . PHP_EOL .
+            '</html>',
+            $status,
+            $title,
+            "Please see:",
+            $url
+        );
         
         return $status;
     }
