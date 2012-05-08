@@ -49,13 +49,13 @@ if(!function_exists('http_response_code')) {
                 case 503: $text = 'Service Unavailable'; break;
                 case 504: $text = 'Gateway Time-out'; break;
                 case 505: $text = 'HTTP Version not supported'; break;
-                default: throw new Exception('Unknown http status code "' . $code . '"');
+                default: throw new Exception('Unknown http status code "' . $response_code . '"');
             }
             
-            $current_code = $code;
+            $current_code = $response_code;
             $protocol = (isset($_SERVER['SERVER_PROTOCOL'])?$_SERVER['SERVER_PROTOCOL']:'HTTP/1.0');
             
-            header($protocol . ' ' . $code . ' ' . $text, true, $current_code);
+            header($protocol . ' ' . $current_code . ' ' . $text, true, $current_code);
             
         }
         
