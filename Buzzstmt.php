@@ -4,6 +4,7 @@ class Buzzstmt {
     
     protected $sql = '';
     protected $type = null;
+    protected $tables = array();
     
     protected static function escape_column($column) {
         return ('`' . str_replace('.', '`.`', $column) . '`');
@@ -32,7 +33,7 @@ class Buzzstmt {
         return $r;
     }
     
-    protected static function where_condition($condition, $substitutes) {
+    protected function where_condition($condition, $substitutes) {
         
         $r = '';
         
@@ -52,7 +53,10 @@ class Buzzstmt {
                 }
                 
                 $r .= ($r?' AND ':'') . self::escape_column(mysql_real_escape_string(
-                    is_numeric($key)?sprintf($val::$link, $val::get_table(), $val::get_primary()):$key
+                    is_numeric($key)?(
+                        (count($this->tables) == 1 && isset($this->tables[0]) && $this->tables[0] == $val::get_table())?
+                        $val::get_primary() : sprintf($val::$link, $val::get_table(), $val::get_primary())
+                    ):$key
                 )) . '=';
                 
                 if(is_null($val)) {
@@ -140,6 +144,7 @@ class Buzzstmt {
         if(is_array($from)) {
             
             $first = true;
+            $this->tables = $from;
             
             foreach($from as $key => $val) {
                 $this->append($first?' FROM ':','); $first = false;
@@ -148,11 +153,13 @@ class Buzzstmt {
             
             return $this;
         } else {
+            $this->tables = func_get_args();
             return $this->append(' FROM ' . self::escape_columns(func_get_args()));
         }
     }
     
     function update($table) {
+        $this->tables = func_get_args();
         return $this->append('UPDATE ' . self::escape_columns(func_get_args()));
     }
     
@@ -196,6 +203,7 @@ class Buzzstmt {
     }
     
     function into($table) {
+        $this->tables = array($table);
         return $this->append(' INTO ' . self::escape_column($table));
     }
     
@@ -208,7 +216,7 @@ class Buzzstmt {
         $args = func_get_args();
         $where = array_shift($args);
         
-        return $this->append(' WHERE ' . self::where_condition($where, $args));
+        return $this->append(' WHERE ' . $this->where_condition($where, $args));
     }
     
     function group_by() {
@@ -220,7 +228,7 @@ class Buzzstmt {
         $args = func_get_args();
         $having = array_shift($args);
         
-        return $this->append(' HAVING ' . self::where_condition($having, $args));
+        return $this->append(' HAVING ' . $this->where_condition($having, $args));
     }
     
     function order_by($order) {
