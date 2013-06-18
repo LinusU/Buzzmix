@@ -79,6 +79,17 @@ class Buzzsql {
     }
     
     function __isset($name) {
+        
+        $self = get_called_class();
+        
+        if(!is_null($this->primary_id)) {
+            if($name == $self::get_primary()) {
+                return true;
+            } else {
+                $this->load();
+            }
+        }
+        
         return isset($this->info[$name]);
     }
     
